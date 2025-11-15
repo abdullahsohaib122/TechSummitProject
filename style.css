@@ -1,202 +1,221 @@
-/* -------------------------
-   General & Dark Mode
-------------------------- */
+a/* -------------------------
+    Modern Colors & Base
+-------------------------- */
+:root {
+  --bg: #f8f9fc;
+  --text: #1a1a1a;
+
+  --primary: #8b2cf5; /* Purple */
+  --secondary: #ff7a29; /* Orange */
+  --accent: #ffb35c; /* soft orange */
+  --soft: #f5f0ff;
+  --muted: #626b78;
+}
+
 body {
+  background: var(--bg);
+  color: var(--text);
   font-family: 'Poppins', sans-serif;
-  background: #f8f9fa;
-  color: #212529;
-  transition: all 0.3s ease;
-}
-
-body.dark {
-  background: #0f1720;
-  color: #e6eef8;
-}
-
-.navbar,
-footer,
-.card {
-  transition: background 0.3s ease, color 0.3s ease;
-}
-
-.navbar.dark,
-footer.dark,
-.card.dark {
-  background: #222 !important;
-  color: white;
 }
 
 /* -------------------------
-   Hero Section
-------------------------- */
-.hero {
-  position: relative;
-  width: 100%;
-  height: 80vh;
-  background: linear-gradient(120deg, #0d6efd 0%, #6610f2 100%);
+    Navbar
+-------------------------- */
+.navbar {
+  background: linear-gradient(90deg, #8b2cf5, #ff7a29);
+  padding: 0.7rem 1rem;
+}
+
+.navbar-brand {
+  color: #fff;
   display: flex;
   align-items: center;
-  justify-content: center;
-  text-align: center;
-  color: white;
-  overflow: hidden;
+  gap: .6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .5px;
 }
 
-.hero h1 {
-  font-size: 3rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-  animation: floatText 6s ease-in-out infinite;
-  text-shadow: 0 10px 30px rgba(0,0,0,0.25);
-}
-
-.hero p {
-  font-size: 1.25rem;
-  margin-bottom: 2rem;
-}
-
-/* Floating animation */
-@keyframes floatText {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0); }
-}
-
-/* -------------------------
-   Carousel / Banner
-------------------------- */
-.carousel-img {
-  width: 100%;
-  height: 460px;
-  object-fit: cover;
-  object-position: center;
-}
-
-.carousel-caption {
-  bottom: 80px;
-  background: rgba(0,0,0,0.55);
-  padding: 15px 20px;
-  border-radius: 8px;
-}
-
-.carousel-caption h5 {
-  font-size: 32px;
-  font-weight: 700;
-  animation: fadeUp 0.7s ease-in-out;
-}
-
-.carousel-caption p {
-  font-size: 18px;
-  animation: fadeUp 1s ease-in-out;
-}
-
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(20px);}
-  to { opacity: 1; transform: translateY(0);}
-}
-
-/* -------------------------
-   Cards Section
-------------------------- */
-.card-hover {
-  transition: transform 0.35s ease, box-shadow 0.35s ease, background 0.3s ease;
-}
-
-.card-hover:hover {
-  transform: translateY(-10px) scale(1.03);
-  box-shadow: 0 20px 40px rgba(2,6,23,0.15);
-  background: #ffe082;
-}
-
-/* -------------------------
-   Buttons
-------------------------- */
-.btn-shadow {
-  box-shadow: 0 6px 18px rgba(2,6,23,0.2);
-}
-
-.btn-primary {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.btn-primary:hover {
-  transform: scale(1.05);
-}
-
-/* -------------------------
-   Forms
-------------------------- */
-input.form-control, select.form-select {
-  transition: box-shadow .25s ease, border-color .25s ease;
-}
-input.form-control:focus, select.form-select:focus {
-  box-shadow: 0 6px 18px rgba(13,110,253,0.12);
-  border-color: #0d6efd;
-}
-
-/* Error message */
-.form-text.text-danger {
+.nav-link {
+  color: #fff !important;
   font-weight: 500;
+  margin-left: 10px;
+}
+
+.nav-link:hover {
+  color: #ffe2d0 !important;
 }
 
 /* -------------------------
-   Summary Table
-------------------------- */
-.table {
-  background: rgba(255,255,255,0.95);
-  border-radius: 8px;
+    Banner
+-------------------------- */
+.banner {
+  min-height: 430px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  background: linear-gradient(135deg, rgba(139,44,245,0.7), rgba(255,122,41,0.65)), 
+              url('https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1200&q=80')
+              center/cover;
+}
+
+.banner-content {
+  padding: 4rem 1rem;
+  position: relative;
+  z-index: 2;
+  color: #fff;
+}
+
+.banner-title {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  font-size: clamp(2.1rem, 4vw, 3.5rem);
+  line-height: 1.1;
+}
+
+.banner-title .orange {
+  color: var(--secondary);
+}
+
+.banner-sub {
+  font-size: 1.1rem;
+  opacity: 0.95;
+  margin-top: 10px;
+}
+
+/* Buttons */
+.btn-cta {
+  background: linear-gradient(90deg, var(--secondary), var(--primary));
+  color: #fff;
+  border-radius: 50px;
+  padding: .7rem 1.7rem;
+  font-weight: 600;
+  border: none;
+  transition: .25s ease;
+}
+
+.btn-cta:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 25px rgba(0,0,0,0.2);
+}
+
+.btn-ghost {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  border-radius: 30px;
+  border: 1px solid rgba(255,255,255,0.35);
+  padding: .7rem 1.6rem;
+  margin-left: 10px;
+}
+
+.btn-ghost:hover {
+  background: rgba(255,255,255,0.35);
+}
+
+/* -------------------------
+    Courses Section
+-------------------------- */
+.section-title {
+  font-family: 'Montserrat';
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.course-card {
+  border-radius: 14px;
+  background: #fff;
   overflow: hidden;
+  box-shadow: 0 10px 22px rgba(0,0,0,0.08);
+  transition: 0.3s ease;
 }
 
-.table th, .table td {
-  vertical-align: middle !important;
-  font-size: 1rem;
+.course-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 35px rgba(0,0,0,0.12);
 }
 
-/* -------------------------
-   Animations
-------------------------- */
-.animate-fade {
-  animation: fadeIn 2s ease-in-out;
+.card-img-top {
+  height: 180px;
+  object-fit: cover;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+.card-body {
+  padding: 1.2rem;
 }
 
-.animate-btn {
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% { transform: scale(1);}
-  50% { transform: scale(1.06);}
-  100% { transform: scale(1);}
+.price-badge {
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: .85rem;
 }
 
 /* -------------------------
-   Responsive
-------------------------- */
-@media (max-width: 768px) {
-  .hero h1 { font-size: 2rem; }
-  .hero p { font-size: 1rem; }
-  .carousel-img { height: 280px; }
+    WHY CHOOSE US
+-------------------------- */
+.bg-soft {
+  background: linear-gradient(135deg, #fff, #f7f0ff);
 }
 
-@media (max-width: 576px) {
-  .hero { height: 60vh; padding: 20px; }
-  .carousel-caption h5 { font-size: 22px; }
-  .carousel-caption p { font-size: 14px; }
-}
-body.dark {
-  background: #111;
-  color: #e6eef8;
+.why-list li {
+  margin-bottom: 1rem;
+  font-weight: 600;
+  color: #3b3b3b;
 }
 
-.navbar.dark,
-.card.dark,
-footer.dark {
-  background: #222 !important;
-  color: white;
+.why-card {
+  width: 150px;
+  height: 110px;
+  border-radius: 12px;
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  transition: 0.3s ease;
 }
+
+.why-card:hover {
+  transform: translateY(-8px) scale(1.05);
+}
+
+/* -------------------------
+    FOOTER
+-------------------------- */
+footer {
+  background: linear-gradient(90deg, #1a1a1d, #2d0f42);
+  color: #e6e6e6;
+  padding: 2.2rem 1rem;
+}
+
+footer .social {
+  font-size: 1.3rem;
+  margin-left: .6rem;
+  color: #ddd;
+  transition: .25s ease;
+}
+
+footer .social:hover {
+  color: var(--secondary);
+  transform: scale(1.2);
+}
+/* Fix footer carousel image sizing */
+#footer-carousel .carousel-item img {
+  width: 100%;
+  height: 220px;       /* you can change: 180, 200, 220, 250 */
+  object-fit: cover; 
+  border-radius: 12px;
+  display: block;
+}
+
+/* keep carousel height stable */
+#footer-carousel .carousel-inner {
+  min-height: 220px;
+}
+
+/* prevent stretching */
+#footer-carousel .carousel-item {
+  transition: transform 0.6s ease;
+}
+

@@ -1,229 +1,184 @@
-/* app.js - handles dark mode, validations, storage, redirect, summary rendering */
+// app.js - theme toggle, particles, footer carousel init, year and small helpers.
+// Put this file in same folder and include after bootstrap
 
-/* -------------------------
-   Utility & DOM references
-   -------------------------*/
-const isSummary = location.pathname.includes("summary.html");
-const isRegister = location.pathname.includes("register.html");
-const isIndex = location.pathname.endsWith("index.html") || location.pathname.endsWith("/") || location.pathname.includes("index");
+document.addEventListener('DOMContentLoaded', () => {
+  // Footer year
+  const yearEl = document.getElementById('year');
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
 
-const darkButtons = [
-  document.getElementById('darkToggle'),
-  document.getElementById('darkToggleNav'),
-  document.getElementById('darkToggleSummary')
-].filter(Boolean);
+  // Theme toggle (works for both pages if present)
+  function initTheme(btnId) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    const body = document.body;
+    const saved = localStorage.getItem('pref-theme') || 'light';
+    body.classList.toggle('dark-mode', saved === 'dark');
+    body.classList.toggle('light-mode', saved !== 'dark');
+    btn.textContent = saved === 'dark' ? 'Light' : 'Dark';
+    btn.addEventListener('click', () => {
+      const isDark = body.classList.contains('dark-mode');
+      body.classList.toggle('dark-mode', !isDark);
+      body.classList.toggle('light-mode', isDark);
+      btn.textContent = !isDark ? 'Light' : 'Dark';
+      localStorage.setItem('pref-theme', !isDark ? 'dark' : 'light');
+    });
+  }
+  initTheme('themeToggle');
+  initTheme('themeToggle2');
 
-function setDarkMode(on) {
-  if (on) document.body.classList.add('dark');
-  else document.body.classList.remove('dark');
-  localStorage.setItem('dark', on ? '1' : '0');
-}
+  // Banner particles (light-weight)
+  (function initParticles() {
+    const canvas = document.getElementById('bannerParticles');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let w = canvas.width = canvas.offsetWidth;
+    let h = canvas.height = canvas.offsetHeight;
+    window.addEventListener('resize', () => { w = canvas.width = canvas.offsetWidth; h = canvas.height = canvas.offsetHeight; });
+    const particles = [];
+    const count = Math.round((w * h) / 90000); // scale with size
+    for (let i=0;i<count;i++){
+      particles.push({ x:Math.random()*w, y:Math.random()*h, r:Math.random()*1.5+0.6, dx:(Math.random()-0.5)*0.4, dy:(Math.random()-0.5)*0.4, color:['rgba(255,255,255,0.12)','rgba(255,255,255,0.08)'][Math.floor(Math.random()*2)] });
+    }
+    function loop(){
+      ctx.clearRect(0,0,w,h);
+      for (const p of particles){
+        p.x += p.dx; p.y += p.dy;
+        if (p.x < 0) p.x = w; if (p.x > w) p.x = 0;
+        if (p.y < 0) p.y = h; if (p.y > h) p.y = 0;
+        ctx.beginPath();
+        ctx.fillStyle = p.color;
+        ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+        ctx.fill();
+      }
+      requestAnimationFrame(loop);
+    }
+    loop();
+  })();
 
-/* Initialize dark mode from localStorage */
-(function initDark() {
-  const dark = localStorage.getItem('dark') === '1';
-  setDarkMode(dark);
-  darkButtons.forEach(btn => {
-    btn.textContent = dark ? 'Light' : 'Dark';
-    btn.onclick = () => {
-      const newVal = !document.body.classList.contains('dark');
-      setDarkMode(newVal);
-      darkButtons.forEach(b => b.textContent = newVal ? 'Light' : 'Dark');
-    };
-  });
-})();
+  // small helper: staggered reveal for banner words (for older browsers)
+  (function animateWords() {
+    const words = document.querySelectorAll('.banner-title .word');
+    words.forEach(w => {
+      const d = w.getAttribute('data-delay') || 0;
+      setTimeout(()=>{ w.style.opacity = '1'; w.style.transform = 'translateY(0)'; }, Number(d));
+    });
+  })();
 
-/* -------------------------
-   Validation config
-   -------------------------*/
-const patterns = {
-  name: /^[A-Za-z ]{3,}$/,         // alphabets + spaces, min 3 chars
-  email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-  phone: /^03\d{9}$/,             // starts with 03 and 11 digits total
-  cnic: /^\d{13}$/,               // 13 digits
-  password: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/ // min8, upper, lower, digit, special
-};
+  // Footer carousel is handled by Bootstrap data attributes - but we ensure it auto cycles
+  const carousel = document.querySelector('#imageCarousel.carousel');
+  if (carousel && bootstrap && bootstrap.Carousel) {
+    try {
+      new bootstrap.Carousel(carousel, { interval: 3000, ride: 'carousel' });
+    } catch(e) { /* ignore */ }
+  }
 
-/* -------------------------
-   Registration page logic
-   -------------------------*/
-if (isRegister) {
-  // get elements
-  const form = document.getElementById('regForm');
-  const nameInput = document.getElementById('fullName');
-  const emailInput = document.getElementById('email');
-  const phoneInput = document.getElementById('phone');
-  const cnicInput = document.getElementById('cnic');
-  const deptInput = document.getElementById('department');
-  const passInput = document.getElementById('password');
-  const confirmInput = document.getElementById('confirmPassword');
-  const submitBtn = document.getElementById('submitBtn');
-  const successAlert = document.getElementById('successAlert');
+  // Initialize AOS (if library loaded)
+  if (window.AOS) AOS.init();
 
-  // error displays
-  const nameErr = document.getElementById('nameErr');
-  const emailErr = document.getElementById('emailErr');
-  const phoneErr = document.getElementById('phoneErr');
-  const cnicErr = document.getElementById('cnicErr');
-  const deptErr = document.getElementById('deptErr');
-  const genderErr = document.getElementById('genderErr');
-  const passErr = document.getElementById('passErr');
-  const confirmErr = document.getElementById('confirmErr');
+  // === ENROLL FORM (if present on page) - validation, modal & toast ===
+  const enrollForm = document.getElementById('enrollForm');
+  if (!enrollForm) return;
 
-  // validation state
-  const valid = {
-    name: false, email: false, phone: false, cnic: false,
-    dept: false, gender: false, password: false, confirm: false
+  // Elements
+  const fullName = document.getElementById('fullName');
+  const email = document.getElementById('email');
+  const contact = document.getElementById('contact');
+  const dob = document.getElementById('dob');
+  const course = document.getElementById('course');
+  const education = document.getElementById('education');
+  const password = document.getElementById('password');
+  const confirmPassword = document.getElementById('confirmPassword');
+  const terms = document.getElementById('terms');
+
+  const errs = {
+    name: document.getElementById('errName'),
+    email: document.getElementById('errEmail'),
+    contact: document.getElementById('errContact'),
+    dob: document.getElementById('errDob'),
+    course: document.getElementById('errCourse'),
+    education: document.getElementById('errEducation'),
+    password: document.getElementById('errPassword'),
+    confirm: document.getElementById('errConfirm'),
+    terms: document.getElementById('errTerms')
   };
 
-  function updateSubmitState() {
-    const allValid = Object.values(valid).every(v => v === true);
-    submitBtn.disabled = !allValid;
+  function showErr(el, msg){ if(el) el.textContent = msg || ''; }
+  function clearErr(el){ if(el) el.textContent = ''; }
+
+  function validName(){ const v = fullName.value.trim(); if(!v){ showErr(errs.name,'Name required'); return false;} if(!/^[A-Za-z\s]+$/.test(v)){ showErr(errs.name,'Only alphabets allowed'); return false;} clearErr(errs.name); return true; }
+  function validEmail(){ const v = email.value.trim(); if(!v){ showErr(errs.email,'Email required'); return false;} if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)){ showErr(errs.email,'Invalid email'); return false;} clearErr(errs.email); return true; }
+  function validContact(){ const v = (contact.value||'').replace(/\D/g,''); if(!v){ showErr(errs.contact,'Contact required'); return false;} if(!/^\d{11}$/.test(v)){ showErr(errs.contact,'Contact must be 11 digits'); return false;} clearErr(errs.contact); return true; }
+  function validDob(){ const v = dob.value; if(!v){ showErr(errs.dob,'DOB required'); return false;} const b=new Date(v); if(isNaN(b.getTime())){ showErr(errs.dob,'Invalid date'); return false;} const t=new Date(); let age=t.getFullYear()-b.getFullYear(); if(t.getMonth()<b.getMonth()|| (t.getMonth()===b.getMonth() && t.getDate()<b.getDate())) age--; if(age<16){ showErr(errs.dob,'You must be 16+'); return false;} clearErr(errs.dob); return true; }
+  function validCourse(){ if(!course.value){ showErr(errs.course,'Select a course'); return false;} clearErr(errs.course); return true; }
+  function validEducation(){ if(!education.value){ showErr(errs.education,'Select education'); return false;} clearErr(errs.education); return true; }
+  function validPassword(){ const v = password.value; const re = /(?=.{8,})(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])/; if(!v){ showErr(errs.password,'Password required'); return false;} if(!re.test(v)){ showErr(errs.password,'At least 8 chars with upper,lower,number,symbol'); return false;} clearErr(errs.password); return true; }
+  function validConfirm(){ if(confirmPassword.value !== password.value){ showErr(errs.confirm,'Passwords do not match'); return false;} clearErr(errs.confirm); return true; }
+  function validTerms(){ if(!terms.checked){ showErr(errs.terms,'Accept terms'); return false;} clearErr(errs.terms); return true; }
+
+  // Attach blur/change for live feedback
+  if(fullName) fullName.addEventListener('blur', validName);
+  if(email) email.addEventListener('blur', validEmail);
+  if(contact) contact.addEventListener('blur', validContact);
+  if(dob) dob.addEventListener('blur', validDob);
+  if(course) course.addEventListener('change', validCourse);
+  if(education) education.addEventListener('change', validEducation);
+  if(password) password.addEventListener('blur', validPassword);
+  if(confirmPassword) confirmPassword.addEventListener('blur', validConfirm);
+  if(terms) terms.addEventListener('change', validTerms);
+
+  const confirmModalEl = document.getElementById('confirmModal');
+  const modal = (confirmModalEl) ? new bootstrap.Modal(confirmModalEl) : null;
+  const successToastEl = document.getElementById('successToast');
+  const successToast = (successToastEl && bootstrap.Toast) ? new bootstrap.Toast(successToastEl, {delay:4000}) : null;
+
+  function buildSummary() {
+    const list = document.getElementById('summaryList');
+    if(!list) return;
+    const gender = document.querySelector('input[name="gender"]:checked')?.value || '';
+    list.innerHTML = `
+      <li><strong>Name:</strong> ${fullName.value.trim()}</li>
+      <li><strong>Email:</strong> ${email.value.trim()}</li>
+      <li><strong>Contact:</strong> ${(contact.value||'').replace(/\D/g,'')}</li>
+      <li><strong>Gender:</strong> ${gender}</li>
+      <li><strong>DOB:</strong> ${dob.value}</li>
+      <li><strong>Course:</strong> ${course.value}</li>
+      <li><strong>Education:</strong> ${education.value}</li>
+    `;
   }
 
-  // helpers for messages
-  function ok(el) { el.textContent = ''; }
-  function fail(el, msg) { el.textContent = msg; }
-
-  // real-time listeners
-  nameInput.addEventListener('input', () => {
-    valid.name = patterns.name.test(nameInput.value.trim());
-    valid.name ? ok(nameErr) : fail(nameErr, 'Enter at least 3 alphabets (letters and spaces only).');
-    updateSubmitState();
-  });
-
-  emailInput.addEventListener('input', () => {
-    valid.email = patterns.email.test(emailInput.value.trim());
-    valid.email ? ok(emailErr) : fail(emailErr, 'Enter a valid email address.');
-    updateSubmitState();
-  });
-
-  phoneInput.addEventListener('input', () => {
-    // remove non-digits for easier typing but keep value display
-    phoneInput.value = phoneInput.value.replace(/[^\d]/g,'').slice(0,11);
-    valid.phone = patterns.phone.test(phoneInput.value);
-    valid.phone ? ok(phoneErr) : fail(phoneErr, 'Phone must start with 03 and be 11 digits.');
-    updateSubmitState();
-  });
-
-  cnicInput.addEventListener('input', () => {
-    cnicInput.value = cnicInput.value.replace(/[^\d]/g,'').slice(0,13);
-    valid.cnic = patterns.cnic.test(cnicInput.value);
-    valid.cnic ? ok(cnicErr) : fail(cnicErr, 'CNIC must be exactly 13 digits (no dashes).');
-    updateSubmitState();
-  });
-
-  deptInput.addEventListener('change', () => {
-    valid.dept = deptInput.value !== '';
-    valid.dept ? ok(deptErr) : fail(deptErr, 'Please select your department.');
-    updateSubmitState();
-  });
-
-  // gender radios
-  const genderRadios = document.querySelectorAll('input[name="gender"]');
-  genderRadios.forEach(r => r.addEventListener('change', () => {
-    valid.gender = !!document.querySelector('input[name="gender"]:checked');
-    valid.gender ? ok(genderErr) : fail(genderErr, 'Select a gender.');
-    updateSubmitState();
-  }));
-
-  passInput.addEventListener('input', () => {
-    valid.password = patterns.password.test(passInput.value);
-    valid.password ? ok(passErr) : fail(passErr, 'Password must be 8+ chars with upper, lower, number, and special char.');
-    // also re-validate confirm
-    valid.confirm = confirmInput.value === passInput.value && confirmInput.value.length > 0;
-    valid.confirm ? ok(confirmErr) : fail(confirmErr, 'Passwords do not match.');
-    updateSubmitState();
-  });
-
-  confirmInput.addEventListener('input', () => {
-    valid.confirm = confirmInput.value === passInput.value && confirmInput.value.length > 0;
-    valid.confirm ? ok(confirmErr) : fail(confirmErr, 'Passwords do not match.');
-    updateSubmitState();
-  });
-
-  // initial call in case browser pre-fills
-  [nameInput, emailInput, phoneInput, cnicInput, deptInput, passInput, confirmInput].forEach(i => i.dispatchEvent(new Event('input')));
-
-  // submit handler
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    // final check
-    if (!Object.values(valid).every(v => v)) {
-      // if somehow invalid, highlight
-      if (!valid.name) nameErr.textContent = 'Please fix your name';
-      if (!valid.email) emailErr.textContent = 'Please fix your email';
+  document.getElementById('submitBtn')?.addEventListener('click', () => {
+    const ok = [validName(), validEmail(), validContact(), validDob(), validCourse(), validEducation(), validPassword(), validConfirm(), validTerms()].every(Boolean);
+    if (!ok) {
+      const firstErr = document.querySelector('.form-text.text-danger:not(:empty)');
+      if(firstErr) firstErr.scrollIntoView({behavior:'smooth', block:'center'});
       return;
     }
-
-    // gather data (do NOT store passwords in plain localStorage)
-    const data = {
-      fullName: nameInput.value.trim(),
-      email: emailInput.value.trim(),
-      phone: phoneInput.value.trim(),
-      cnic: cnicInput.value.trim(),
-      department: deptInput.value,
-      gender: document.querySelector('input[name="gender"]:checked')?.value || ''
-    };
-
-    // show success alert
-    successAlert.classList.remove('d-none');
-
-    // save to localStorage
-    localStorage.setItem('techSummitUser', JSON.stringify(data));
-
-    // brief animation: disable button and show spinner
-    submitBtn.disabled = true;
-    const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...`;
-
-    // redirect after 2 seconds
-    setTimeout(() => {
-      window.location.href = 'summary.html';
-    }, 2000);
+    buildSummary();
+    if(modal) modal.show();
   });
-}
 
-/* -------------------------
-   Summary page logic
-   -------------------------*/
-if (isSummary) {
-  const summaryBody = document.getElementById('summaryBody');
-  const clearBtn = document.getElementById('clearStorage');
-
-  function renderSummary() {
-    const raw = localStorage.getItem('techSummitUser');
-    if (!raw) {
-      summaryBody.innerHTML = `<tr><td colspan="2" class="text-center">No registration data found. Please register first.</td></tr>`;
-      return;
-    }
-    const data = JSON.parse(raw);
-    const rows = Object.entries(data).map(([key, val]) => {
-      const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
-      return `<tr><th style="width:35%">${label}</th><td>${val}</td></tr>`;
-    }).join('');
-    summaryBody.innerHTML = rows;
-  }
-
-  renderSummary();
-
-  clearBtn && clearBtn.addEventListener('click', () => {
-    localStorage.removeItem('techSummitUser');
-    renderSummary();
+  document.getElementById('confirmSubmit')?.addEventListener('click', () => {
+    if(! [validName(), validEmail(), validContact(), validDob(), validCourse(), validEducation(), validPassword(), validConfirm(), validTerms()].every(Boolean)) return;
+    modal?.hide();
+    successToast?.show();
+    // Save to localStorage
+    const key='enrollments';
+    const arr= JSON.parse(localStorage.getItem(key)||'[]');
+    arr.push({
+      name: fullName.value.trim(),
+      email: email.value.trim(),
+      contact: (contact.value||'').replace(/\D/g,''),
+      gender: document.querySelector('input[name="gender"]:checked')?.value||'',
+      dob: dob.value,
+      course: course.value,
+      education: education.value,
+      ts: new Date().toISOString()
+    });
+    localStorage.setItem(key, JSON.stringify(arr));
+    enrollForm.reset();
+    Object.values(errs).forEach(clearErr);
   });
-}
 
-/* -------------------------
-   Small safety: if user opens register.html without index, you can still go home
-   -------------------------*/
-
-function setDarkMode(on) {
-  if (on) {
-    document.body.classList.add('dark');
-    document.querySelectorAll('.navbar, .card, footer').forEach(el => el.classList.add('dark'));
-  } else {
-    document.body.classList.remove('dark');
-    document.querySelectorAll('.navbar, .card, footer').forEach(el => el.classList.remove('dark'));
-  }
-  localStorage.setItem('dark', on ? '1' : '0');
-}
+  // Prevent native submit
+  enrollForm.addEventListener('submit', e => e.preventDefault());
+});
